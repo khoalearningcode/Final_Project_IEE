@@ -240,6 +240,7 @@ terraform.*
 *.mp3
 *.wav
 *.flac
+!images/*
 
 # ==============================
 # Machine learning model files
@@ -292,4 +293,3 @@ raw_dataset/
 
 
 .gitignore copy
-images/
