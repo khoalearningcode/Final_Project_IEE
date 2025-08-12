@@ -1,0 +1,10 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.cache/
+hf_cache/
+**/models/
+**/data/
+**/.ipynb_checkpoints

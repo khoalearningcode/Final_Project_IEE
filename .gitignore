@@ -216,6 +216,8 @@ ansible/secrets/*
 # terraform
 # ==============================
 terraform/*
+*.terraform.*
+terraform.*
 !terraform/main.tf
 !terraform/variables.tf
 !terraform/README.md

@@ -1,0 +1,21 @@
+# docker-compose.yml (không Jaeger)
+version: "3.10"
+
+services:
+  yolo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo-app-iee
+    environment:
+      - TRACING=off               # tắt tracing cho gọn
+      - MODEL_PATH=/app/models/best.pt
+      - PORT=5002
+      - PROM_PORT=8097
+    volumes:
+      - ./models:/app/models:ro   # model .pt từ host
+      - ./results:/app/results    # ảnh annotated lưu ra host
+    ports:
+      - "5002:5002"               # FastAPI
+      - "8097:8097"               # Prometheus /metrics
+    restart: unless-stopped
