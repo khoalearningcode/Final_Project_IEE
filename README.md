@@ -20,7 +20,7 @@
 # Tables of contents
 
 1. [Create GKE Cluster](#1-create-gke-cluster)
-
+2. [Ingesting Service](#2-ingesting-service)
 
 
 
@@ -107,10 +107,34 @@ gke_iee-project-2025_asia-southeast1_iee-project-2025-gke
   Lưu file JSON vào vị trí an toàn (ví dụ: `~/sa-ingest.json`).  
   **Không commit** key vào repository công khai.
 
-+ **Xuất biến môi trường để ứng dụng sử dụng key**:
-  ```bash
-  export GOOGLE_APPLICATION_CREDENTIALS=~/sa-ingest.json
-  ```
++ **Dua bien vao .env**: 
+  Thêm đường dẫn file vào .env
+
+
+## 2. Ingesting Service
+
+**Mục đích sử dụng**  
+Ingesting Service chịu trách nhiệm nhận ảnh từ API, kiểm tra định dạng hợp lệ, sau đó đẩy ảnh lên **Google Cloud Storage (GCS)** và cố gắng sinh **signed URL** để truy cập ảnh.  
+Ngoài ra, service còn tích hợp **metrics** (Prometheus + OpenTelemetry) và **tracing** (Jaeger) để quan sát hiệu năng và luồng xử lý.
+
+**Luồng hoạt động cơ bản**:
+1. API `/push_image` nhận file ảnh từ client.
+2. Validate định dạng (`jpg`, `jpeg`, `png`) và kiểm tra có mở được bằng Pillow.
+3. Sinh `file_id`, tạo `gcs_path` và upload ảnh lên GCS.
+4. Cố gắng sinh signed URL (nếu credentials có private key).
+5. Trả về JSON gồm:
+   - `file_id`
+   - `gcs_path`
+   - `gs_uri`
+   - `signed_url` (nếu có)
+
+
+**Cách build Docker image**: [Docker_build](ingesting/Docker_build.md)
+
+**Tài liệu mô tả chi tiết**: [English](ingesting/README_Ingesting_English.md) [Vietnamese](ingesting/README_Ingesting_Vietnamese.md)
+
+
+![ingesting-service UI](images/ingesting-service.png)
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
