@@ -55,6 +55,7 @@ from google.auth import default as gauth_default
 
 # ============== Feature flags qua ENV ==============
 ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
+DISABLE_METRICS = os.getenv("DISABLE_METRICS", "false").lower() == "true" 
 METRICS_PORT = int(os.getenv("METRICS_PORT", "8098"))
 JAEGER_HOST = os.getenv(
     "JAEGER_AGENT_HOST",
@@ -112,32 +113,39 @@ except Exception as _:
 # =========================
 # 3) Metrics (OTel + Prometheus)
 # =========================
-# Mở HTTP server Prometheus để scrape (mặc định path /metrics)
-start_http_server(port=METRICS_PORT, addr="0.0.0.0")
-
+class _NoopMetric:
+    def add(self, *_, **__): pass
+    def record(self, *_, **__): pass
+    def observe(self, *_, **__): pass
 # OTel Metrics Provider + Reader
-resource = Resource(attributes={SERVICE_NAME: "ingesting-service"})
-reader = PrometheusMetricReader()
-provider = MeterProvider(resource=resource, metric_readers=[reader])
-set_meter_provider(provider)
-meter = metrics.get_meter("ingesting", "0.1.1")
+if not DISABLE_METRICS:
+    resource = Resource(attributes={SERVICE_NAME: "ingesting-service"})
+    reader = PrometheusMetricReader()
+    provider = MeterProvider(resource=resource, metric_readers=[reader])
+    set_meter_provider(provider)
+    meter = metrics.get_meter("ingesting", "0.1.1")
 
-# OTel metrics
-ingesting_counter = meter.create_counter(
-    name="ingesting_push_image_counter",
-    description="Number of /push_image requests",
-)
-ingesting_histogram = meter.create_histogram(
-    name="ingesting_push_image_response_time_seconds",
-    description="Response time for /push_image",
-    unit="s",
-)
+    # OTel metrics
+    ingesting_counter = meter.create_counter(
+        name="ingesting_push_image_counter",
+        description="Number of /push_image requests",
+    )
+    ingesting_histogram = meter.create_histogram(
+        name="ingesting_push_image_response_time_seconds",
+        description="Response time for /push_image",
+        unit="s",
+    )
 
-# Prometheus client metrics (tóm tắt latency)
-response_time_summary = Summary(
-    "ingesting_response_time_summary_seconds",
-    "Summary of response time for /push_image",
-)
+    # Prometheus client metrics (tóm tắt latency)
+    response_time_summary = Summary(
+        "ingesting_response_time_summary_seconds",
+        "Summary of response time for /push_image",
+    )
+else:
+    logger.warning("Metrics are disabled (DISABLE_METRICS=true).")
+    ingesting_counter = _NoopMetric()
+    ingesting_histogram = _NoopMetric()
+    response_time_summary = _NoopMetric()
 
 # =========================
 # 4) FastAPI Application
@@ -254,6 +262,8 @@ async def push_image(file: UploadFile = File(...)):
 # 6) Entrypoint (dev run)
 # =========================
 if __name__ == "__main__":
+    if not DISABLE_METRICS:
+        start_http_server(port=METRICS_PORT, addr="0.0.0.0")
     uvicorn.run(app, host="0.0.0.0", port=5001)
 
 # docker push godminhkhoa/ingesting-service:latest

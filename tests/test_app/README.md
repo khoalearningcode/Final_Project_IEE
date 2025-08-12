@@ -45,14 +45,12 @@ conda activate IEE
 pip install pytest requests numpy
 ```
 
-### 2.2. Tắt tracing (để tránh lỗi khi chưa chạy Jaeger)
-```bash
-export TRACING=off
-```
+### 2.2. Tắt tracing va metrics (để tránh lỗi khi chưa chạy Jaeger)
+
 
 ### 2.3. Chạy toàn bộ test
 ```bash
-pytest -v
+pytest -q tests/test_app
 ```
 
 ### 2.4. Chạy 1 file test cụ thể

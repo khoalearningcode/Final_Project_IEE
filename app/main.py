@@ -395,4 +395,4 @@ if __name__ == "__main__":
         "Summary of YOLO inference response time",
     )
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "5002")))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
