@@ -1,0 +1,4 @@
+Model,mAP50,mAP50-95,Precision,Recall,Inference_ms_per_img
+yolov8s,0.718,0.471,0.826,0.636,3.6
+yolo12s,0.737,0.484,0.886,0.643,4.8
+yolo12m,0.745,0.506,0.855,0.646,11.6

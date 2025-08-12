@@ -276,6 +276,8 @@ terraform/*
 *.feather
 raw_dataset/
 
+!model_comparison_yolo.csv
+
 # ==============================
 # Document files
 # ==============================
@@ -288,3 +290,4 @@ raw_dataset/
 
 
 .gitignore copy
+images/
