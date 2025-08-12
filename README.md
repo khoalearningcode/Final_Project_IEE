@@ -77,7 +77,40 @@ For example:
 gke_iee-project-2025_asia-southeast1_iee-project-2025-gke
 ```
 
+### 1.6 Download service account keys
 
+Để tải file Service Account key dưới dạng JSON từ Google Cloud Console, thực hiện như sau:
+
++ **Truy cập Google Cloud Console**:  
+  Mở [https://console.cloud.google.com/](https://console.cloud.google.com/) và đảm bảo bạn đang chọn đúng project (ví dụ: `iee-project-2025`).
+
++ **Đi đến trang Service Accounts**:  
+  Trong menu bên trái, chọn **IAM & Admin** → **Service Accounts**.
+
++ **Tìm Service Account cần lấy key**:  
+  Ví dụ: `ingest-sa@iee-project-2025.iam.gserviceaccount.com`.
+
++ **Vào phần Manage keys**:  
+  Ở cột **Actions** của service account, nhấn vào biểu tượng **3 chấm** → chọn **Manage keys**.
+
++ **Tạo key mới**:  
+  Nhấn **Add Key** → **Create new key**.
+
++ **Chọn định dạng key**:  
+  Chọn **Key type** = `JSON`.
+
++ **Tải xuống key**:  
+  Nhấn **Create**.  
+  File JSON sẽ được tải về tự động (ví dụ: `iee-project-2025-123abc456def.json`).
+
++ **Lưu trữ key an toàn**:  
+  Lưu file JSON vào vị trí an toàn (ví dụ: `~/sa-ingest.json`).  
+  **Không commit** key vào repository công khai.
+
++ **Xuất biến môi trường để ứng dụng sử dụng key**:
+  ```bash
+  export GOOGLE_APPLICATION_CREDENTIALS=~/sa-ingest.json
+  ```
 
 
 <!-- MARKDOWN LINKS & IMAGES -->

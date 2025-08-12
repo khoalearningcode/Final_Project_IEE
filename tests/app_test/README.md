@@ -57,12 +57,12 @@ pytest -v
 
 ### 2.4. Chạy 1 file test cụ thể
 ```bash
-pytest -v tests/test_api_basic.py
+pytest -v tests/app_test/test_api_basic.py
 ```
 
 ### 2.5. Chạy 1 test cụ thể trong file
 ```bash
-pytest -v tests/test_api_basic.py::test_predict_with_mock
+pytest -v tests/app_test/test_api_basic.py::test_predict_with_mock
 ```
 
 ---
