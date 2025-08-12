@@ -1,0 +1,35 @@
+item {
+   id: 1
+   name: Cấm ngược chiều
+}
+
+item {
+   id: 2
+   name: Cấm dừng và đỗ
+}
+
+item {
+   id: 3
+   name: Cấm rẽ
+}
+
+item {
+   id: 4
+   name: Giới hạn tốc độ
+}
+
+item {
+   id: 5
+   name: Cấm còn lại
+}
+
+item {
+   id: 6
+   name: Nguy hiểm
+}
+
+item {
+   id: 7
+   name: Hiệu lệnh
+}
+

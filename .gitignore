@@ -1,0 +1,290 @@
+# ==============================
+# Python bytecode / optimized / DLL files
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# ==============================
+# Distribution / packaging
+# ==============================
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==============================
+# PyInstaller
+# ==============================
+*.manifest
+*.spec
+
+# ==============================
+# Installer logs
+# ==============================
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==============================
+# Unit test / coverage reports
+# ==============================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# ==============================
+# Translations
+# ==============================
+*.mo
+*.pot
+
+# ==============================
+# Django stuff
+# ==============================
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# ==============================
+# Flask stuff
+# ==============================
+instance/
+.webassets-cache
+
+# ==============================
+# Scrapy stuff
+# ==============================
+.scrapy
+
+# ==============================
+# Sphinx documentation
+# ==============================
+docs/_build/
+
+# ==============================
+# PyBuilder
+# ==============================
+.pybuilder/
+target/
+
+# ==============================
+# Jupyter Notebook
+# ==============================
+.ipynb_checkpoints
+
+# ==============================
+# IPython
+# ==============================
+profile_default/
+ipython_config.py
+
+# ==============================
+# pyenv
+# ==============================
+# .python-version
+
+# ==============================
+# pipenv / uv / poetry / pdm / pixi
+# ==============================
+#Pipfile.lock
+#uv.lock
+#poetry.lock
+#poetry.toml
+#pdm.lock
+#pdm.toml
+.pdm-python
+.pdm-build/
+.pixi
+
+# ==============================
+# PEP 582
+# ==============================
+__pypackages__/
+
+# ==============================
+# Celery stuff
+# ==============================
+celerybeat-schedule
+celerybeat.pid
+
+# ==============================
+# SageMath
+# ==============================
+*.sage.py
+
+# ==============================
+# Virtual environments
+# ==============================
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================
+# Spyder / Rope project settings
+# ==============================
+.spyderproject
+.spyproject
+.ropeproject
+
+# ==============================
+# mkdocs
+# ==============================
+/site
+
+# ==============================
+# mypy / Pyre / pytype / Cython
+# ==============================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+
+# ==============================
+# IDEs
+# ==============================
+#.idea/
+# .vscode/
+
+# ==============================
+# Abstra
+# ==============================
+.abstra/
+
+# ==============================
+# Ruff
+# ==============================
+.ruff_cache/
+
+# ==============================
+# PyPI
+# ==============================
+.pypirc
+
+# ==============================
+# Marimo
+# ==============================
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+# ==============================
+# Streamlit
+# ==============================
+.streamlit/secrets.toml
+
+# ==============================
+# ansible
+# ==============================
+ansible/secrets/*
+
+# ==============================
+# terraform
+# ==============================
+terraform/*
+!terraform/main.tf
+!terraform/variables.tf
+!terraform/README.md
+
+# ==============================
+# Media files (images, videos, audio)
+# ==============================
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.svg
+*.webp
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+*.flac
+
+# ==============================
+# Machine learning model files
+# ==============================
+*.pt
+*.pth
+*.onnx
+*.h5
+*.ckpt
+*.pb
+*.tflite
+*.joblib
+*.pkl
+
+# ==============================
+# Archives / compressed files
+# ==============================
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.bz2
+*.xz
+*.7z
+*.rar
+
+# ==============================
+# Data files
+# ==============================
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.feather
+raw_dataset/
+
+# ==============================
+# Document files
+# ==============================
+*.doc
+*.docx
+*.pdf
+*.ppt
+*.pptx
+*.odt
+
+
+.gitignore copy
