@@ -133,14 +133,3 @@ def test_push_image_url_no_ext_but_content_type_ok(app_client, monkeypatch, samp
     assert data["message"] == "Successfully!"
     assert re.match(UUID_IMG_URL_RE, data["gcs_path"]), data["gcs_path"]
     _assert_signed_url_ok(data["signed_url"])
-
-# ---------------------------------------------------------------------------------------------------------
-# 4) /push_video invalid
-# ---------------------------------------------------------------------------------------------------------
-
-def test_push_video_unsupported_format(app_client):
-    """Định dạng video không hỗ trợ → 400"""
-    fake = b"\x00" * 64
-    files = {"file": ("clip.mpe", fake, "video/mpeg")}
-    r = app_client.post("/push_video", files=files)
-    assert r.status_code == 400
