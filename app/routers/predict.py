@@ -125,15 +125,18 @@ async def predict_images(
     return {"count": len(results), "results": results}
 
 
+# --- URL ➜ nhận form-data ---
 @router.post("/url", response_model=PredictOut)
-def predict_url(
+async def predict_url_form(
     request: Request,
-    body: UrlPredictIn,
+    annotated: bool = Form(False, description="Return annotated PNG"),
+    url: str = Form(..., description="Public image URL"),
+    
 ):
     req_model = resolve_requested_model(request)
     load_model(req_model)
 
-    r = requests.get(body.url, timeout=20)
+    r = requests.get(url, timeout=20)
     if r.status_code != 200:
         raise HTTPException(status_code=400, detail=f"Download failed: HTTP {r.status_code}")
 
@@ -146,10 +149,10 @@ def predict_url(
     record_metrics("/predict/url", elapsed, len(dets))
 
     ts = int(time() * 1000)
-    stem = Path(body.url).stem or "image"
+    stem = Path(url).stem or "image"
 
     resp = {
-        "source": body.url,
+        "source": url,
         "image": {"width": w, "height": h},
         "inference": {"time_seconds": elapsed, "detections": len(dets)},
         "detections": dets,
@@ -157,7 +160,7 @@ def predict_url(
         "gcs": None,
     }
 
-    png_bytes = annotate_image(res0) if body.annotated else None
+    png_bytes = annotate_image(res0) if annotated else None
     json_meta, png_meta, _ = save_prediction_payload(stem, ts, resp, png_bytes)
 
     out = resp.copy()
@@ -168,15 +171,18 @@ def predict_url(
     return out
 
 
+# --- GCS ➜ nhận form-data ---
 @router.post("/gcs")
-def predict_gcs(
+async def predict_gcs_form(
     request: Request,
-    body: GCSPredictIn,
+    annotated: bool = Form(False, description="Return annotated PNG"),
+    source: str = Form(..., description="gs://bucket/path/to/img.jpg hoặc URL GCS"),
+    
 ):
     req_model = resolve_requested_model(request)
     load_model(req_model)
 
-    bucket, obj_path = parse_gcs_input(body.source)
+    bucket, obj_path = parse_gcs_input(source)
     try:
         image_bytes = download_bytes(bucket, obj_path)
     except Exception as e:
@@ -206,7 +212,7 @@ def predict_gcs(
         "detections": dets,
     }
 
-    png_bytes = annotate_image(res0) if body.annotated else None
+    png_bytes = annotate_image(res0) if annotated else None
     json_meta, png_meta, _ = save_prediction_payload(stem, ts, resp, png_bytes)
 
     return {
