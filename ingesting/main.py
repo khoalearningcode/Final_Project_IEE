@@ -17,6 +17,10 @@ from io import BytesIO
 from time import time
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv() or "../.env")  # chỉnh path nếu .env ở root
+import tempfile 
+import mimetypes
+import requests
+from typing import List, Optional
 
 # ---------- FastAPI & serving ----------
 import uvicorn
@@ -62,6 +66,8 @@ JAEGER_HOST = os.getenv(
     "jaeger-tracing-jaeger-all-in-one.tracing.svc.cluster.local",
 )
 JAEGER_PORT = int(os.getenv("JAEGER_AGENT_PORT", "6831"))
+ALLOWED_IMAGE_EXIST = {"jpg", "jpeg", "png"}
+ALLOWED_VIDEO_EXIST = {"mp4", "mov", "avi", "mkv", "webm"}
 
 # =========================
 # 1) Tracing (Jaeger) - optional
@@ -156,6 +162,65 @@ app = FastAPI(
     openapi_url="/ingesting/openapi.json",
 )
 
+async def _handle_single_image_upload(filename: str, content_type: Optional[str], image_bytes: bytes):
+    """Validate & upload 1 ảnh lên GCS, trả về metadata + signed_url nếu có."""
+    start_time = time()
+    ingesting_counter.add(1, {"api": "/push_image"})
+
+    with tracer.start_as_current_span("push_image") as push_span:
+        # Validate ảnh
+        with tracer.start_as_current_span("validate-image", links=[Link(push_span.get_span_context())]):
+            ext = (filename or "").split(".")[-1].lower()
+            if ext not in ALLOWED_IMAGE_EXIST:
+                raise HTTPException(status_code=400, detail="Only .jpg/.jpeg/.png allowed")
+            try:
+                Image.open(BytesIO(image_bytes)).convert("RGB")
+            except UnidentifiedImageError:
+                raise HTTPException(status_code=400, detail="Invalid image file")
+
+        # Tạo ID & path
+        file_id = str(uuid.uuid4())
+        gcs_path = f"images/{file_id}.{ext}"
+        gs_uri = f"gs://{GCS_BUCKET_NAME}/{gcs_path}"
+
+        # Upload GCS
+        with tracer.start_as_current_span("upload-to-gcs", links=[Link(push_span.get_span_context())]):
+            blob = bucket.blob(gcs_path)
+            try:
+                blob.upload_from_string(image_bytes, content_type=content_type or f"image/{ext}")
+                logger.info(f"Uploaded image to GCS: {gcs_path}")
+            except Exception as e:
+                logger.error(f"GCS upload failed: {e}")
+                raise HTTPException(status_code=500, detail="GCS upload failed")
+
+        # Signed URL
+        signed_url = None
+        with tracer.start_as_current_span("generate-signed-url", links=[Link(push_span.get_span_context())]):
+            try:
+                response_disposition = f"attachment; filename={filename}"
+                signed_url = blob.generate_signed_url(
+                    version="v4",
+                    expiration=datetime.timedelta(hours=1),
+                    method="GET",
+                    response_disposition=response_disposition,
+                )
+            except Exception as e:
+                logger.warning(f"Signed URL generation failed (image): {e}")
+                signed_url = None
+
+        elapsed = time() - start_time
+        ingesting_histogram.record(elapsed, {"api": "/push_image"})
+        response_time_summary.observe(elapsed)
+
+        return {
+            "message": "Successfully!",
+            "file_id": file_id,
+            "gcs_path": gcs_path,
+            "gs_uri": gs_uri,
+            "signed_url": signed_url,
+        }
+
+
 @app.get("/")
 def read_root():
     """Endpoint chào mừng / hướng dẫn mở docs."""
@@ -178,56 +243,80 @@ def favicon():
 # =========================
 @app.post("/push_image")
 async def push_image(file: UploadFile = File(...)):
+    image_bytes = await file.read()
+    return await _handle_single_image_upload(file.filename, file.content_type, image_bytes)
+
+@app.post("/push_images")
+async def push_images(files: List[UploadFile] = File(...)):
     """
-    Nhận file ảnh:
-    - Validate định dạng
-    - Upload ảnh lên GCS & (cố gắng) sinh signed URL
-    - Ghi metrics + trace
+    Nhận nhiều ảnh cùng lúc: -F "files=@a.jpg" -F "files=@b.png"
     """
-    start_time = time()
-    ingesting_counter.add(1, {"api": "/push_image"})
+    results = []
+    for f in files:
+        try:
+            b = await f.read()
+            res = await _handle_single_image_upload(f.filename, f.content_type, b)
+            results.append({"filename": f.filename, **res})
+        except HTTPException as he:
+            results.append({"filename": f.filename, "error": he.detail})
+        except Exception as e:
+            results.append({"filename": f.filename, "error": str(e)})
+    return {"count": len(results), "results": results}
 
-    with tracer.start_as_current_span("push_image") as push_span:
+@app.post("/push_image_url")
+def push_image_url(url: str):
+    """
+    Tải ảnh từ URL công khai rồi upload lên GCS.
+    Body JSON: {"url": "https://.../abc.jpg"}
+    """
+    ingesting_counter.add(1, {"api": "/push_image_url"})
 
-        # --- Validate ảnh ---
-        with tracer.start_as_current_span(
-            "validate-image", links=[Link(push_span.get_span_context())]
-        ):
-            image_bytes = await file.read()
-            ext = (file.filename or "").split(".")[-1].lower()
-            if ext not in {"jpg", "jpeg", "png"}:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Only .jpg/.jpeg/.png allowed",
-                )
-            try:
-                Image.open(BytesIO(image_bytes)).convert("RGB")
-            except UnidentifiedImageError:
-                raise HTTPException(status_code=400, detail="Invalid image file")
+    with tracer.start_as_current_span("push_image_url") as span:
+        try:
+            with tracer.start_as_current_span("download-image", links=[Link(span.get_span_context())]):
+                r = requests.get(url, timeout=20)
+                if r.status_code != 200:
+                    raise HTTPException(status_code=400, detail=f"Download failed: HTTP {r.status_code}")
+                image_bytes = r.content
+                guessed_name = url.split("?")[0].split("/")[-1] or "remote.jpg"
+                content_type = r.headers.get("Content-Type")
+                if "." not in guessed_name:
+                    ext = (mimetypes.guess_extension(content_type or "") or ".jpg").lstrip(".")
+                    guessed_name = f"remote.{ext}"
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
-        # Tạo ID và đường dẫn object trên GCS
+    # xử lý như ảnh đơn (sync -> gọi helper async qua anyio)
+    import anyio
+    return anyio.run(_handle_single_image_upload, guessed_name, content_type, image_bytes)
+
+@app.post("/push_video")
+async def push_video(file: UploadFile = File(...)):
+    """
+    Nhận 1 video file (mp4, mov, avi, mkv, webm) và upload lên GCS.
+    """
+    ingesting_counter.add(1, {"api": "/push_video"})
+    with tracer.start_as_current_span("push_video") as span:
+        data = await file.read()
+        ext = (file.filename or "").split(".")[-1].lower()
+        if ext not in ALLOWED_VIDEO_EXIST:
+            raise HTTPException(status_code=400, detail="Unsupported video format")
+
         file_id = str(uuid.uuid4())
-        gcs_path = f"images/{file_id}.{ext}"
+        gcs_path = f"videos/{file_id}.{ext}"
         gs_uri = f"gs://{GCS_BUCKET_NAME}/{gcs_path}"
 
-        # --- Upload ảnh lên GCS ---
-        with tracer.start_as_current_span(
-            "upload-to-gcs", links=[Link(push_span.get_span_context())]
-        ):
+        with tracer.start_as_current_span("upload-to-gcs", links=[Link(span.get_span_context())]):
             blob = bucket.blob(gcs_path)
-            if not blob.exists():
-                try:
-                    blob.upload_from_string(image_bytes, content_type=file.content_type)
-                    logger.info(f"Uploaded to GCS: {gcs_path}")
-                except Exception as e:
-                    logger.error(f"GCS upload failed: {e}")
-                    raise HTTPException(status_code=500, detail="GCS upload failed")
+            try:
+                blob.upload_from_string(data, content_type=file.content_type or f"video/{ext}")
+                logger.info(f"Uploaded video to GCS: {gcs_path}")
+            except Exception as e:
+                logger.error(f"GCS upload failed (video): {e}")
+                raise HTTPException(status_code=500, detail="GCS upload failed")
 
-        # --- Sinh signed URL truy cập ảnh (fallback nếu không có private key) ---
         signed_url = None
-        with tracer.start_as_current_span(
-            "generate-signed-url", links=[Link(push_span.get_span_context())]
-        ):
+        with tracer.start_as_current_span("generate-signed-url", links=[Link(span.get_span_context())]):
             try:
                 response_disposition = f"attachment; filename={file.filename}"
                 signed_url = blob.generate_signed_url(
@@ -236,28 +325,17 @@ async def push_image(file: UploadFile = File(...)):
                     method="GET",
                     response_disposition=response_disposition,
                 )
-            except AttributeError as e:
-                # Trường hợp dùng user token (không có private key) => không ký được URL
-                logger.warning(f"Skip signed URL (no private key in creds): {e}")
-                signed_url = None
             except Exception as e:
-                logger.warning(f"Signed URL generation failed: {e}")
+                logger.warning(f"Signed URL generation failed (video): {e}")
                 signed_url = None
 
-        # Ghi thời gian xử lý
-        elapsed = time() - start_time
-        ingesting_histogram.record(elapsed, {"api": "/push_image"})
-        response_time_summary.observe(elapsed)
-
-        # --- Phản hồi ---
         return {
             "message": "Successfully!",
             "file_id": file_id,
             "gcs_path": gcs_path,
-            "gs_uri": gs_uri,          # luôn có
-            "signed_url": signed_url,  # có nếu SA key / private key sẵn sàng
+            "gs_uri": gs_uri,
+            "signed_url": signed_url,
         }
-
 # =========================
 # 6) Entrypoint (dev run)
 # =========================
