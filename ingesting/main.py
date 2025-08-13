@@ -21,6 +21,7 @@ import tempfile
 import mimetypes
 import requests
 from typing import List, Optional
+from pydantic import BaseModel
 
 # ---------- FastAPI & serving ----------
 import uvicorn
@@ -48,8 +49,8 @@ from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from prometheus_client import Summary, start_http_server
 
 # ---------- Image & errors ----------
-from PIL import Image, UnidentifiedImageError
-
+from PIL import Image, UnidentifiedImageError, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 # ---------- Project modules ----------
 from ingesting.config import Config
 from ingesting.utils import get_storage_client
@@ -68,6 +69,9 @@ JAEGER_HOST = os.getenv(
 JAEGER_PORT = int(os.getenv("JAEGER_AGENT_PORT", "6831"))
 ALLOWED_IMAGE_EXIST = {"jpg", "jpeg", "png"}
 ALLOWED_VIDEO_EXIST = {"mp4", "mov", "avi", "mkv", "webm"}
+IMAGES_API_PREFIX = "images/api"
+IMAGES_URL_PREFIX = "images/url"
+VIDEOS_API_PREFIX = "videos/api"
 
 # =========================
 # 1) Tracing (Jaeger) - optional
@@ -162,7 +166,7 @@ app = FastAPI(
     openapi_url="/ingesting/openapi.json",
 )
 
-async def _handle_single_image_upload(filename: str, content_type: Optional[str], image_bytes: bytes):
+async def _handle_single_image_upload(filename: str, content_type: Optional[str], image_bytes: bytes, source: str = "api"):
     """Validate & upload 1 ảnh lên GCS, trả về metadata + signed_url nếu có."""
     start_time = time()
     ingesting_counter.add(1, {"api": "/push_image"})
@@ -179,8 +183,9 @@ async def _handle_single_image_upload(filename: str, content_type: Optional[str]
                 raise HTTPException(status_code=400, detail="Invalid image file")
 
         # Tạo ID & path
+        prefix = IMAGES_API_PREFIX if source == "api" else IMAGES_URL_PREFIX
         file_id = str(uuid.uuid4())
-        gcs_path = f"images/{file_id}.{ext}"
+        gcs_path = f"{prefix}/{file_id}.{ext}" 
         gs_uri = f"gs://{GCS_BUCKET_NAME}/{gcs_path}"
 
         # Upload GCS
@@ -244,7 +249,7 @@ def favicon():
 @app.post("/push_image")
 async def push_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
-    return await _handle_single_image_upload(file.filename, file.content_type, image_bytes)
+    return await _handle_single_image_upload(file.filename, file.content_type, image_bytes, source="api")
 
 @app.post("/push_images")
 async def push_images(files: List[UploadFile] = File(...)):
@@ -255,7 +260,7 @@ async def push_images(files: List[UploadFile] = File(...)):
     for f in files:
         try:
             b = await f.read()
-            res = await _handle_single_image_upload(f.filename, f.content_type, b)
+            res = await _handle_single_image_upload(f.filename, f.content_type, b, source="api")
             results.append({"filename": f.filename, **res})
         except HTTPException as he:
             results.append({"filename": f.filename, "error": he.detail})
@@ -263,8 +268,12 @@ async def push_images(files: List[UploadFile] = File(...)):
             results.append({"filename": f.filename, "error": str(e)})
     return {"count": len(results), "results": results}
 
+
+class UrlIn(BaseModel):
+    url: str
+
 @app.post("/push_image_url")
-def push_image_url(url: str):
+async def push_image_url(payload: UrlIn):
     """
     Tải ảnh từ URL công khai rồi upload lên GCS.
     Body JSON: {"url": "https://.../abc.jpg"}
@@ -274,11 +283,11 @@ def push_image_url(url: str):
     with tracer.start_as_current_span("push_image_url") as span:
         try:
             with tracer.start_as_current_span("download-image", links=[Link(span.get_span_context())]):
-                r = requests.get(url, timeout=20)
+                r = requests.get(payload.url, timeout=20)
                 if r.status_code != 200:
                     raise HTTPException(status_code=400, detail=f"Download failed: HTTP {r.status_code}")
                 image_bytes = r.content
-                guessed_name = url.split("?")[0].split("/")[-1] or "remote.jpg"
+                guessed_name = payload.url.split("?")[0].split("/")[-1] or "remote.jpg"
                 content_type = r.headers.get("Content-Type")
                 if "." not in guessed_name:
                     ext = (mimetypes.guess_extension(content_type or "") or ".jpg").lstrip(".")
@@ -286,9 +295,9 @@ def push_image_url(url: str):
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    # xử lý như ảnh đơn (sync -> gọi helper async qua anyio)
-    import anyio
-    return anyio.run(_handle_single_image_upload, guessed_name, content_type, image_bytes)
+    # Gọi helper đúng kiểu async và set source="url" để path = images/url/<uuid>.<ext>
+    return await _handle_single_image_upload(guessed_name, content_type, image_bytes, source="url")
+
 
 @app.post("/push_video")
 async def push_video(file: UploadFile = File(...)):
@@ -303,7 +312,7 @@ async def push_video(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Unsupported video format")
 
         file_id = str(uuid.uuid4())
-        gcs_path = f"videos/{file_id}.{ext}"
+        gcs_path = f"videos/api/{file_id}.{ext}" 
         gs_uri = f"gs://{GCS_BUCKET_NAME}/{gcs_path}"
 
         with tracer.start_as_current_span("upload-to-gcs", links=[Link(span.get_span_context())]):
@@ -336,6 +345,7 @@ async def push_video(file: UploadFile = File(...)):
             "gs_uri": gs_uri,
             "signed_url": signed_url,
         }
+
 # =========================
 # 6) Entrypoint (dev run)
 # =========================
