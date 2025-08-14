@@ -19,3 +19,6 @@ opentelemetry-sdk==1.36.0
 opentelemetry-exporter-jaeger-thrift==1.21.0
 opentelemetry-exporter-prometheus==0.57b0
 opentelemetry-semantic-conventions==0.57b0
+
+google-cloud-storage==3.3.0
+
