@@ -6,6 +6,7 @@ load_dotenv(find_dotenv() or "../.env")
 import uvicorn
 from fastapi import FastAPI
 from loguru import logger
+import requests
 from prometheus_client import start_http_server
 
 from ingesting.config import (
