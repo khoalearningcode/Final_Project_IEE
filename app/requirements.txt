@@ -21,4 +21,4 @@ opentelemetry-exporter-prometheus==0.57b0
 opentelemetry-semantic-conventions==0.57b0
 
 google-cloud-storage==3.3.0
-
+Deprecated==1.2.18
