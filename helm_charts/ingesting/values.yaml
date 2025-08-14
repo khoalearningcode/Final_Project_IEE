@@ -1,0 +1,45 @@
+replicaCount: 2
+
+ingress:
+  enabled: true
+  host: 35.247.187.146.nip.io
+
+image:
+  repository: godminhkhoa/ingesting-iee-service
+  tag: 1.0.4
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  name: ingesting-service
+  httpPort:
+    enable: true
+    port: 80
+    targetPort: 5001
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+
+env:
+  - name: ENABLE_TRACING
+    value: "true"
+  - name: DISABLE_METRICS
+    value: "false"
+  - name: STORAGE_BACKEND
+    value: "both"   # local | gcs | both
+  - name: GCS_BUCKET_NAME
+    value: "iee-project-2025"
+  - name: SIGNED_URL_EXP_HOURS
+    value: "24"
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /secrets/gcp-key.json
+
+secretMount:
+  name: gcp-key-secret
+  mountPath: /secrets/gcp-key.json
+  subPath: gcp-key.json
