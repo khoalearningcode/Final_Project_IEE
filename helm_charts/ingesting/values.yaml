@@ -6,8 +6,8 @@ ingress:
 
 image:
   repository: godminhkhoa/ingesting-iee-service
-  tag: 1.0.4
-  pullPolicy: IfNotPresent
+  tag: latest
+  pullPolicy: Always
 
 service:
   type: ClusterIP

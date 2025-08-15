@@ -17,6 +17,12 @@ spec:
                 name: {{ .Values.service.name }}
                 port:
                   number: {{ .Values.service.httpPort.port }}
+          - path: /healthz                 # ⬅️ THÊM MỚI
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.service.name }}
+                port: { number: {{ .Values.service.httpPort.port }} }
           - path: /detection/openapi.json
             pathType: Prefix
             backend:
@@ -53,6 +59,13 @@ spec:
                 port:
                   number: {{ .Values.service.httpPort.port }}
           - path: /predict/gcs
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.service.name }}
+                port:
+                  number: {{ .Values.service.httpPort.port }}
+          - path: /model
             pathType: Prefix
             backend:
               service:

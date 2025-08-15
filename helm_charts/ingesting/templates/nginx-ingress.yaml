@@ -45,3 +45,9 @@ spec:
                 name: {{ .Values.service.name }}
                 port:
                   number: {{ .Values.service.httpPort.port }}
+          - path: /healthz                 # ⬅️ THÊM MỚI
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.service.name }}
+                port: { number: {{ .Values.service.httpPort.port }} }

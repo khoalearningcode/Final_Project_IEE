@@ -3,10 +3,15 @@ replicaCount: 2
 ingress:
   enabled: true
   host: 35.247.187.146.sslip.io
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
 
 image:
   repository: godminhkhoa/predict-iee-app
-  tag: 1.0.3
+  tag: 1.0.4
   pullPolicy: IfNotPresent
 
 service:
@@ -18,12 +23,12 @@ service:
     targetPort: 5000
 
 resources:
-  limits:
-    cpu: "500m"
-    memory: "512Mi"
   requests:
-    cpu: "250m"
-    memory: "256Mi"
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "2"
+    memory: "2Gi"
 
 env:
   - name: ENABLE_TRACING
@@ -31,13 +36,15 @@ env:
   - name: DISABLE_METRICS
     value: "false"
   - name: STORAGE_BACKEND
-    value: "both"   # local | gcs | both
+    value: "both"   # (đang dùng cả local + gcs; để cô lập sự cố có thể tạm set "local")
   - name: GCS_BUCKET_NAME
     value: "iee-project-2025"
   - name: SIGNED_URL_EXP_HOURS
     value: "24"
   - name: GOOGLE_APPLICATION_CREDENTIALS
     value: /secrets/gcp-key.json
+  - name: DEFAULT_MODEL                 # ⬅️ autoload model khi start để tránh load trong request
+    value: "yolo12m"                   # đổi đúng key trong AVAILABLE_MODELS của bạn
 
 secretMount:
   name: gcp-key-secret

@@ -14,5 +14,4 @@ def read_root():
 
 @router.get("/healthz")
 def health_check():
-    ok = bool(_loaded_model is not None)
-    return {"status": "healthy" if ok else "not_ready", "model_loaded": ok}
+    return {"status": "healthy"}
