@@ -241,6 +241,7 @@ terraform.*
 *.wav
 *.flac
 !images/*
+!test_image.jpeg
 
 
 # ==============================
