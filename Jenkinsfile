@@ -11,7 +11,7 @@ pipeline {
         stage('Run Tests') {
             agent {
                 docker {
-                    image 'godminhkhoa/test-traffic-detection:1.0.7'
+                    image 'godminhkhoa/test-traffic-detection:1.0.8'
                     reuseNode true
                 }
             }
