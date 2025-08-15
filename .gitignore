@@ -242,18 +242,6 @@ terraform.*
 *.flac
 !images/*
 
-# ==============================
-# Machine learning model files
-# ==============================
-*.pt
-*.pth
-*.onnx
-*.h5
-*.ckpt
-*.pb
-*.tflite
-*.joblib
-*.pkl
 
 # ==============================
 # Archives / compressed files
