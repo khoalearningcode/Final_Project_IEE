@@ -283,3 +283,5 @@ raw_dataset/
 
 .gitignore copy
 *.md
+
+!README.md
