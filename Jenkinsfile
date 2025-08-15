@@ -11,7 +11,7 @@ pipeline {
         stage('Run Tests') {
             agent {
                 docker {
-                    image 'godminhhkhoa/tests:1.0.3'
+                    image 'godminhkhoa/tests:1.0.3'
                     reuseNode true
                 }
             }
