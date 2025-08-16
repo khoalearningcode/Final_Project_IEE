@@ -13,6 +13,25 @@
 * Deliver infrastructure as code: [![Ansible][Ansible-logo]][Ansible-url] [![Terraform][Terraform-logo]][Terraform-url]
 * Cloud platform: [![GCP][GCP-logo]][GCP-url]
 
+
+## What I can do in this project 
+
++ Managed source code with Git/GitHub to track history and support team collaboration.
++ Set up CI/CD pipelines using Jenkins to automate build, test, and deployment processes.
++ Built the backend API with FastAPI for high performance and scalability.
++ Containerized the application with Docker to ensure consistent runtime environments.
++ Deployed and orchestrated containers on Kubernetes (K8s) for scalability and self-healing.
++ Used Helm as a package manager for Kubernetes to simplify installation and upgrades.
++ Stored image data in Google Cloud Storage (GCS).
++ Configured Nginx as an ingress controller to expose services outside the cluster.
++ Managed infrastructure as code with Ansible and Terraform, enabling reproducible environments.
++ Deployed the entire system on Google Cloud Platform (GCP).
+
+## What I can not do in this project 
+
+Planned to integrate observability tools including Prometheus, Elasticsearch, Grafana, Jaeger, and Kibana, 
+  but due to incorrect port configuration at the beginning, this part has not yet been fully deployed.
+
 ## Project Structure
 
 ```
