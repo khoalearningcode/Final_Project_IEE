@@ -32,6 +32,14 @@
 Planned to integrate observability tools including Prometheus, Elasticsearch, Grafana, Jaeger, and Kibana, 
   but due to incorrect port configuration at the beginning, this part has not yet been fully deployed.
 
+# Summary 
+
+In this project, we established a complete end-to-end infrastructure for deploying and managing applications on the cloud. Source code was managed with Git/GitHub, while Jenkins pipelines were set up to automate build, test, and deployment. The backend API was built with FastAPI, containerized using Docker, and deployed on Kubernetes for scalability and self-healing. Helm was used as the package manager to simplify deployment and upgrades. Application data was stored in Google Cloud Storage, with Nginx configured as the ingress controller to expose services. Infrastructure was provisioned and managed through Ansible and Terraform, ensuring reproducibility. Finally, the entire system was successfully deployed on Google Cloud Platform (GCP), forming a robust, cloud-native solution.
+
+----------
+
+Trong dự án này, nhóm đã xây dựng một hệ thống hạ tầng hoàn chỉnh để triển khai và quản lý ứng dụng trên nền tảng đám mây. Mã nguồn được quản lý với Git/GitHub, đồng thời thiết lập pipeline CI/CD bằng Jenkins để tự động hóa quy trình build, test và triển khai. Backend API được phát triển bằng FastAPI, đóng gói với Docker và triển khai trên Kubernetes nhằm đảm bảo khả năng mở rộng và tự phục hồi. Helm được sử dụng như trình quản lý gói cho Kubernetes để đơn giản hóa việc cài đặt và nâng cấp. Dữ liệu hình ảnh được lưu trữ trên Google Cloud Storage, với Nginx được cấu hình làm ingress controller để expose dịch vụ ra bên ngoài. Hạ tầng được quản lý dưới dạng code bằng Ansible và Terraform, giúp dễ dàng tái tạo và kiểm soát môi trường. Cuối cùng, toàn bộ hệ thống đã được triển khai thành công trên Google Cloud Platform (GCP), tạo nên một giải pháp cloud-native ổn định và hiệu quả.
+
 ## Project Structure
 
 ```
@@ -330,11 +338,11 @@ After a successful build, you should see something like:
 
 ### 4.1 Demo ingest data
 
-![](images/ingesting-demo.webm)
+![](images/ingesting-demo.gif)
 
 ### 4.2 Demo retriever
 
-![](images/detection-demo.webm)
+![](images/detection-demo.gif)
 
 
 
