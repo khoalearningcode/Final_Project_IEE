@@ -29,7 +29,7 @@ pipeline {
         }
 
         stage('Build and Push Images') {
-            when { branch 'master' }
+            when { branch 'master' }   // chỉ chạy khi nhánh là master
             parallel {
                 stage('Build Detect App') {
                     steps {
@@ -57,9 +57,9 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy Services') {
-            when { branch 'master' }
+            when { branch 'master' }   // chỉ deploy khi nhánh là master
             parallel {
                 stage('Deploy Ingesting') {
                     agent {
@@ -95,22 +95,43 @@ pipeline {
                 }
             }
         }
-    }
 
-    post {
-        success {
-            sh '''
-              curl -H "Content-Type: application/json" \
-              -X POST -d '{"content": "✅ Build #${BUILD_NUMBER} on branch ${BRANCH_NAME} SUCCESS!"}' \
-              $discordWebhook
-            '''
-        }
-        failure {
-            sh '''
-              curl -H "Content-Type: application/json" \
-              -X POST -d '{"content": "❌ Build #${BUILD_NUMBER} on branch ${BRANCH_NAME} FAILED!"}' \
-              $discordWebhook
-            '''
+        stage('Notify Discord') {
+            steps {
+                script {
+                    def status = currentBuild.currentResult
+                    def timeNow = sh(script: "date -u +'%Y-%m-%d %H:%M UTC'", returnStdout: true).trim()
+                    def runUrl = env.BUILD_URL
+                    def msg = ""
+
+                    if (env.BRANCH_NAME != "master") {
+                        // Với nhánh khác master → chỉ chạy test
+                        if (status == "SUCCESS") {
+                            msg = "✅ Dev tests passed (branch: ${env.BRANCH_NAME})"
+                        } else {
+                            msg = "❌ Dev tests failed (branch: ${env.BRANCH_NAME})"
+                        }
+                    } else {
+                        // Với master → test + build + deploy
+                        if (status == "SUCCESS") {
+                            msg = "✅ Tests passed, images pushed & deployed 🎉"
+                        } else if (status == "UNSTABLE") {
+                            msg = "⚠️ Tests passed but some stages failed"
+                        } else {
+                            msg = "❌ Pipeline failed"
+                        }
+                    }
+
+                    def payload = """{
+                      "content": "${msg}\\n[Run Logs](${runUrl}) at ${timeNow}"
+                    }"""
+
+                    sh """
+                      curl -H "Content-Type: application/json" \
+                      -X POST -d '${payload}' $discordWebhook
+                    """
+                }
+            }
         }
     }
 }
