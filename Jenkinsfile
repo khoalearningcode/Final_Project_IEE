@@ -5,11 +5,11 @@ pipeline {
         registry_base = 'godminhkhoa'
         registryCredential = 'dockerhub'
         imageVersion = "0.0.1.${BUILD_NUMBER}"
+        discordWebhook = credentials('DISCORD_WEBHOOK')
     }
 
     stages {
         stage('Run Tests') {
-            // chạy test cho mọi nhánh
             steps {
                 script {
                     docker.image('godminhkhoa/test-traffic-detection:1.0.8').inside {
@@ -29,7 +29,7 @@ pipeline {
         }
 
         stage('Build and Push Images') {
-            when { branch 'master' }   // chỉ chạy khi branch là master
+            when { branch 'master' }
             parallel {
                 stage('Build Detect App') {
                     steps {
@@ -57,9 +57,9 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy Services') {
-            when { branch 'master' }   // chỉ deploy khi branch là master
+            when { branch 'master' }
             parallel {
                 stage('Deploy Ingesting') {
                     agent {
@@ -94,6 +94,23 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            sh '''
+              curl -H "Content-Type: application/json" \
+              -X POST -d '{"content": "✅ Build #${BUILD_NUMBER} on branch ${BRANCH_NAME} SUCCESS!"}' \
+              $discordWebhook
+            '''
+        }
+        failure {
+            sh '''
+              curl -H "Content-Type: application/json" \
+              -X POST -d '{"content": "❌ Build #${BUILD_NUMBER} on branch ${BRANCH_NAME} FAILED!"}' \
+              $discordWebhook
+            '''
         }
     }
 }
