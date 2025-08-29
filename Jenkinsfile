@@ -9,31 +9,27 @@ pipeline {
 
     stages {
         stage('Run Tests') {
-            agent {
-                docker {
-                    image 'godminhkhoa/test-traffic-detection:1.0.8'
-                    reuseNode true
-                }
-            }
-            environment {
-                ENABLE_TRACING = 'false'
-                DISABLE_METRICS = 'true'
-                STORAGE_BACKEND = 'local' 
-                GCS_BUCKET_NAME = 'iee-project-2025-bucket'
-
-
-                GOOGLE_APPLICATION_CREDENTIALS = credentials('GCP_KEY_FILE')
-            }
+            // chạy test cho mọi nhánh
             steps {
                 script {
-                    sh '''
-                        pytest tests/ --maxfail=1 --disable-warnings -q
-                    '''
+                    docker.image('godminhkhoa/test-traffic-detection:1.0.8').inside {
+                        withEnv([
+                            "ENABLE_TRACING=false",
+                            "DISABLE_METRICS=true",
+                            "STORAGE_BACKEND=local",
+                            "GCS_BUCKET_NAME=iee-project-2025-bucket"
+                        ]) {
+                            withCredentials([file(credentialsId: 'GCP_KEY_FILE', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                                sh 'pytest tests/ --maxfail=1 --disable-warnings -q'
+                            }
+                        }
+                    }
                 }
             }
         }
 
         stage('Build and Push Images') {
+            when { branch 'master' }   // chỉ chạy khi branch là master
             parallel {
                 stage('Build Detect App') {
                     steps {
@@ -59,11 +55,11 @@ pipeline {
                         }
                     }
                 }
-
             }
         }
         
         stage('Deploy Services') {
+            when { branch 'master' }   // chỉ deploy khi branch là master
             parallel {
                 stage('Deploy Ingesting') {
                     agent {
@@ -93,7 +89,7 @@ pipeline {
                     }
                     steps {
                         container('helm') {
-                            sh "helm upgrade --install predict-service  ./helm_charts/predict --namespace traffic-detection --set deployment.image.name=${registry_base}/predict-iee-app --set deployment.image.version=${imageVersion}"
+                            sh "helm upgrade --install predict-service ./helm_charts/predict --namespace traffic-detection --set deployment.image.name=${registry_base}/predict-iee-app --set deployment.image.version=${imageVersion}"
                         }
                     }
                 }
