@@ -19,7 +19,7 @@ pipeline {
                 ENABLE_TRACING = 'false'
                 DISABLE_METRICS = 'true'
                 STORAGE_BACKEND = 'local' 
-                GCS_BUCKET_NAME = 'iee-project-2025'
+                GCS_BUCKET_NAME = 'iee-project-2025-bucket'
 
 
                 GOOGLE_APPLICATION_CREDENTIALS = credentials('GCP_KEY_FILE')

@@ -218,7 +218,7 @@ Then run the following command:
 helm upgrade --install ingesting-service ./helm_charts/ingesting --namespace traffic-detection
 kgp -n traffic-detection
 ```
-Once deployed, the ingesting service will be available at: http://35.247.187.146.nip.io/ingesting/docs.
+Once deployed, the ingesting service will be available at: http://34.124.182.231.nip.io/ingesting/docs.
 ![](images/ingesting-ui.png)
 
 ### 2.3. Deploy the Detection
@@ -233,7 +233,7 @@ Then run:
 helm upgrade --install predict-service ./helm_charts/predict --namespace traffic-detection
 ```
 
-Once deployed, the retriever service will be accessible at: http://35.247.187.146.sslip.io/detection/docs.
+Once deployed, the retriever service will be accessible at: http://34.124.182.231.sslip.io/detection/docs.
 ![](images/detection-ui.png)
 
 ## 3. Continuous deployment to GKE using Jenkins pipeline
@@ -262,6 +262,7 @@ cat ~/.ssh/id_xxxxx.pub
 
 Update the instance's external IP and SSH key path in the `inventory` file. Then, run:
 ```bash
+ ssh -i ~/.ssh/id_ed_25519 godminhkhoa@34.126.137.224
 cd iac/ansible/playbook
 ansible-playbook -i ../inventory install_and_run_docker.yml
 ```

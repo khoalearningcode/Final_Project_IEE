@@ -2,7 +2,7 @@ replicaCount: 2
 
 ingress:
   enabled: true
-  host: 35.247.187.146.sslip.io
+  host: 34.124.182.231.sslip.io
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
@@ -38,7 +38,7 @@ env:
   - name: STORAGE_BACKEND
     value: "both"   # (đang dùng cả local + gcs; để cô lập sự cố có thể tạm set "local")
   - name: GCS_BUCKET_NAME
-    value: "iee-project-2025"
+    value: "iee-project-2025-bucket"
   - name: SIGNED_URL_EXP_HOURS
     value: "24"
   - name: GOOGLE_APPLICATION_CREDENTIALS

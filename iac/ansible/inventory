@@ -1,2 +1,2 @@
 [servers]
-34.143.215.139 ansible_ssh_private_key_file=~/.ssh/id_ed25519
+34.126.137.224 ansible_ssh_private_key_file=~/.ssh/id_ed25519

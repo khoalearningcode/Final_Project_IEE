@@ -2,7 +2,7 @@ replicaCount: 2
 
 ingress:
   enabled: true
-  host: 35.247.187.146.nip.io
+  host: 34.124.182.231.nip.io
 
 image:
   repository: godminhkhoa/ingesting-iee-service
@@ -33,7 +33,7 @@ env:
   - name: STORAGE_BACKEND
     value: "both"   # local | gcs | both
   - name: GCS_BUCKET_NAME
-    value: "iee-project-2025"
+    value: "iee-project-2025-bucket"
   - name: SIGNED_URL_EXP_HOURS
     value: "24"
   - name: GOOGLE_APPLICATION_CREDENTIALS

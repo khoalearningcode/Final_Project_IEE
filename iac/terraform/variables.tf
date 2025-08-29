@@ -1,7 +1,7 @@
 variable "project_id" {
   description = "The project ID to host the cluster in"
   type        = string
-  default     = "iee-project-2025"
+  default     = "iee-project-2025-470505"
 }
 
 variable "region" {
@@ -19,5 +19,5 @@ variable "zone" {
 variable "bucket" {
   description = "GCS bucket name"
   type        = string
-  default     = "iee-project-2025"
+  default     = "iee-project-2025-bucket"
 }
