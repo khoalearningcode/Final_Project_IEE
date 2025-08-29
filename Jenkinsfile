@@ -20,23 +20,25 @@ pipeline {
                 DISABLE_METRICS = 'true'
                 STORAGE_BACKEND = 'local' 
                 GCS_BUCKET_NAME = 'iee-project-2025-bucket'
+
+
                 GOOGLE_APPLICATION_CREDENTIALS = credentials('GCP_KEY_FILE')
             }
             steps {
-                sh '''
-                    pytest tests/ --maxfail=1 --disable-warnings -q
-                '''
+                script {
+                    sh '''
+                        pytest tests/ --maxfail=1 --disable-warnings -q
+                    '''
+                }
             }
         }
 
         stage('Build and Push Images') {
-            when { anyOf { branch 'master'; branch 'dev' } }
             parallel {
                 stage('Build Detect App') {
                     steps {
                         script {
-                            def suffix = (env.BRANCH_NAME == 'dev') ? "-dev" : ""
-                            def imageName = "${registry_base}/predict-iee-app${suffix}"
+                            def imageName = "${registry_base}/predict-iee-app"
                             def dockerImage = docker.build("${imageName}:${imageVersion}", "-f ./app/Dockerfile .")
                             docker.withRegistry('', registryCredential) {
                                 dockerImage.push()
@@ -48,8 +50,7 @@ pipeline {
                 stage('Build Ingesting') {
                     steps {
                         script {
-                            def suffix = (env.BRANCH_NAME == 'dev') ? "-dev" : ""
-                            def imageName = "${registry_base}/ingesting-iee-service${suffix}"
+                            def imageName = "${registry_base}/ingesting-iee-service"
                             def dockerImage = docker.build("${imageName}:${imageVersion}", "-f ./ingesting/Dockerfile .")
                             docker.withRegistry('', registryCredential) {
                                 dockerImage.push()
@@ -58,11 +59,11 @@ pipeline {
                         }
                     }
                 }
+
             }
         }
         
         stage('Deploy Services') {
-            when { branch 'master' }   // chỉ deploy khi là master
             parallel {
                 stage('Deploy Ingesting') {
                     agent {
@@ -92,7 +93,7 @@ pipeline {
                     }
                     steps {
                         container('helm') {
-                            sh "helm upgrade --install predict-service ./helm_charts/predict --namespace traffic-detection --set deployment.image.name=${registry_base}/predict-iee-app --set deployment.image.version=${imageVersion}"
+                            sh "helm upgrade --install predict-service  ./helm_charts/predict --namespace traffic-detection --set deployment.image.name=${registry_base}/predict-iee-app --set deployment.image.version=${imageVersion}"
                         }
                     }
                 }
