@@ -9,7 +9,6 @@ pipeline {
 
     stages {
         stage('Run Tests') {
-            when { anyOf { branch 'dev'; branch 'master' } } // chạy test cả dev và master
             agent {
                 docker {
                     image 'godminhkhoa/test-traffic-detection:1.0.8'
@@ -24,12 +23,14 @@ pipeline {
                 GOOGLE_APPLICATION_CREDENTIALS = credentials('GCP_KEY_FILE')
             }
             steps {
-                sh 'pytest tests/ --maxfail=1 --disable-warnings -q'
+                sh '''
+                    pytest tests/ --maxfail=1 --disable-warnings -q
+                '''
             }
         }
 
         stage('Build and Push Images') {
-            when { anyOf { branch 'dev'; branch 'master' } } // build cả dev & master
+            when { anyOf { branch 'master'; branch 'dev' } }
             parallel {
                 stage('Build Detect App') {
                     steps {
@@ -59,9 +60,9 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy Services') {
-            when { branch 'master' }  // chỉ deploy khi merge vào master
+            when { branch 'master' }   // chỉ deploy khi là master
             parallel {
                 stage('Deploy Ingesting') {
                     agent {
